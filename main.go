@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -29,6 +30,7 @@ func getenv(val string) string {
 	if s == "" {
 		log.Fatalf("Missing env variable %s", val)
 	}
+	return s
 }
 
 var api *anaconda.TwitterApi
