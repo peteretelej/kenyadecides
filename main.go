@@ -46,6 +46,7 @@ func main() {
 		}
 		time.Sleep(time.Minute * 2)
 	}
+
 }
 
 type results struct {
@@ -73,6 +74,7 @@ type results struct {
 		Null       int64
 		Census     int64
 	}
+	Participation map[string]int64
 	Timestamp     int64
 	realTimestamp int64
 
@@ -107,8 +109,13 @@ func updateLastUpdate() error {
 		return fmt.Errorf("invalid response: %s", dat)
 	}
 	tweet := pretty(res)
-	fmt.Printf("\n%s", tweet)
+	tweethtml := prettyHTML(res)
 
+	fmt.Printf("\n%s", tweet)
+	err = ioutil.WriteFile("index.html", []byte(tweethtml), 0644)
+	if err != nil {
+		return err
+	}
 	_, err = api.PostTweet(tweet, nil)
 	if err != nil {
 		return fmt.Errorf("failed to post tweet: %v", err)
@@ -172,5 +179,23 @@ func pretty(res results) string {
 	}
 	out += fmt.Sprintf("\nValid votes: %d\n", res.Results.Blank)
 	out += fmt.Sprintf("Stations: %d / %d\n", res.Progress.Processed, res.Progress.Total)
+	return out
+}
+func prettyHTML(res results) string {
+	peeps := res.Results.Parties
+	var out string
+	out += fmt.Sprintf("<h3>#KenyaDecides UPDATE</h3><br/><br/>")
+	for _, p := range peeps {
+		out += fmt.Sprintf("<p>%s %d (%.2f%%)</p>",
+			shortnames[p.Name],
+			p.Votes.Presential+p.Votes.Absentee+p.Votes.International+p.Votes.Special,
+			p.Votes.Percent,
+		)
+	}
+	out += fmt.Sprintf("<br/><p>Valid votes: %d</p>", res.Results.Blank)
+	out += fmt.Sprintf("<p>Stations: %d / %d</p>", res.Progress.Processed, res.Progress.Total)
+	out += fmt.Sprintf("<p>Disputed votes: %d</p>", res.Results.Null)
+	out += fmt.Sprintf("<p>Rejected votes: %d</p>", res.Results.Abstention)
+	out += fmt.Sprint("<p>Registered votes: 19611423</p>")
 	return out
 }
