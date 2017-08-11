@@ -81,6 +81,8 @@ type results struct {
 	fetched string
 }
 
+var lastTweet = time.Now().Add(-2 * time.Hour)
+
 func updateLastUpdate() error {
 	resp, err := http.Get(presUpdate)
 	if err != nil {
@@ -116,11 +118,15 @@ func updateLastUpdate() error {
 	if err != nil {
 		return err
 	}
-	_, err = api.PostTweet(tweet, nil)
-	if err != nil {
-		return fmt.Errorf("failed to post tweet: %v", err)
+	// only tweet once per hour
+	if lastTweet.Before(time.Now().Add(-1 * time.Hour)) {
+		_, err = api.PostTweet(tweet, nil)
+		if err != nil {
+			return fmt.Errorf("failed to post tweet: %v", err)
+		}
+		lastTweet = time.Now()
+		log.Printf("Results update tweet posted")
 	}
-	log.Printf("Results update tweet posted")
 	return nil
 }
 func getRealTimestamp(t1 int64) (int64, error) {
